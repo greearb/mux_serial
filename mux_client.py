@@ -106,14 +106,9 @@ NOTES:
         _default_port = 23200
 
         ''')
-    parser.add_argument('--host',
-                        help='Host',
-                        default=_default_host)
+    parser.add_argument('--host', help='Host', default=_default_host)
 
-    parser.add_argument('--port',
-                        help='Host port',
-                        type=int,
-                        default=_default_port)
+    parser.add_argument('--port',help='Host port', type=int, default=_default_port)
 
     args = parser.parse_args()
 

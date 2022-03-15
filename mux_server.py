@@ -53,12 +53,14 @@ _default_parity = serial.PARITY_NONE
 _default_stopbits = serial.STOPBITS_ONE
 _default_xon = False
 _default_rtc = False
+_default_broadcast = False
 
 _READ_ONLY = select.POLLIN | select.POLLPRI
 
 
 class mux_server():
     def __init__(self,
+                 broadcast=_default_broadcast,
                  host=_default_host,
                  port=_default_port,
                  device=_default_device,
@@ -78,6 +80,8 @@ class mux_server():
         self.xon = xon
         self.rtc = rtc
 
+        self.broadcast = broadcast
+
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.setblocking(0)
 
@@ -85,6 +89,7 @@ class mux_server():
 
         self.fd_to_socket = {}
         self.clients = []
+        self.client_fileno_processing = None
 
     def close(self):
         print('\nMUX > Closing...', file=sys.stderr)
@@ -163,16 +168,37 @@ class mux_server():
                         # connection
                         if socket is self.server:
                             connection, client_address = socket.accept()
+
                             self.add_client(connection)
 
                         # Data from serial port
                         elif socket is self.tty:
-                            data = socket.read(80)
+                            # should we loging at this point
+                            data = socket.read(1024)
+                            # TODO check which client requested data
                             for client in self.clients:
-                                client.send(data)
+                                # TODO add logger
+                                print("client:{client}".format(client=client))
+                                print("client.fd {}".format(client.fileno()))
+                                # if broadcast set send to all interfaces
+                                if self.broadcast:
+                                    client.send(data)
+
+                                elif self.client_fileno_processing == client.fileno():
+                                    print("send data client.fd {}".format(client.fileno()))
+                                    client.send(data)
 
                         # Data from client
+                        # https://realpython.com/python-sockets/
+                        # multiconn-server.py
                         else:
+                            print("receive: {}".format(socket))
+                            print("getpeername {}".format(socket.getpeername()))
+                            print("processing fd receive {}".format(socket.fileno()))
+                            self.client_fileno_processing = socket.fileno()
+
+                            # TODO look for START_CMD , END_CMD 
+                            # Timeout 
                             data = socket.recv(80)
 
                             # Client has data
@@ -233,23 +259,14 @@ NOTES:
         _default_rtc = False
         ''')
 
-    parser.add_argument('--device',
-                        help='Serial port device',
-                        default=_default_device)
-    parser.add_argument('--baud',
-                        help='Baud rate',
-                        type=int,
-                        default=_default_baudrate)
-    parser.add_argument('--port',
-                        help='Host port',
-                        type=int,
-                        default=_default_port)
+    parser.add_argument('--device', help='Serial port device', default=_default_device)
+    parser.add_argument('--baud', help='Baud rate', type=int, default=_default_baudrate)
+    parser.add_argument('--port', help='Host port', type=int, default=_default_port)
+    parser.add_argument('--broadcast', action='store_true',help='broadcast to all connected sockets')
 
     args = parser.parse_args()
 
-    server = mux_server(port=args.port,
-                        device=args.device,
-                        baudrate=args.baud)
+    server = mux_server(broadcast=args.broadcast,port=args.port, device=args.device, baudrate=args.baud)
     server.run()
 
 
