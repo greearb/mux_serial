@@ -39,17 +39,19 @@ class mux_client():
 
     def interact(self):
         print(
-            "MUX > Connected to {host}:{port}".format(
+            "MUX Connected to {host}:{port}".format(
                 host=self.host,
                 port=self.port))
-        print("MUX > Use ctrl+c to stop ..")
+        print("MUX  Use ctrl+c to stop ..")
+        print("MUX >")
 
         self.tn = telnetlib.Telnet(self.host, self.port)
         try:
             self.tn.interact()
 
         except socket.error as e:
-            print('\nMUX > Socket error: %s' % e.strerror, file=sys.stderr)
+            print('\nMUX Socket error: %s' % e.strerror, file=sys.stderr)
+            print('\n MUX >')
 
         except (KeyboardInterrupt, SystemExit):
             pass
@@ -76,7 +78,7 @@ class mux_client():
         self.sock.close()
 
     def close(self):
-        print('\nMUX > Closing...', file=sys.stderr)
+        print('\nMUX:  Closing...', file=sys.stderr)
         self.sock.close()
         print('MUX > Done! =)', file=sys.stderr)
 
