@@ -39,6 +39,7 @@ import argparse
 import serial
 import select
 import socket
+import traceback
 
 # To install PySerial: `sudo python3 -m pip install pyserial`
 
@@ -186,7 +187,12 @@ class mux_server():
 
                                 elif self.client_fileno_processing == client.fileno():
                                     print("send data client.fd {}".format(client.fileno()))
-                                    client.send(data)
+                                    try:
+                                        client.send(data)
+                                    except Exception as x:
+                                        traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                                        print("client disconnected {}".format(client.fileno()))
+
 
                         # Data from client
                         # https://realpython.com/python-sockets/
